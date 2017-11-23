@@ -1,0 +1,41 @@
+{
+  "name": "serverless-attach-managed-policy",
+  "version": "0.0.1",
+  "description": "A serverless plugin to automatically attach an AWS Managed IAM Policy (or Policies) to all IAM Roles created by the Service.",
+  "main": "lib/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha --recursive -R min ./**/*.spec.js",
+    "lint": "./node_modules/.bin/eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nordstrom/serverless-attach-managed-policy.git"
+  },
+  "keywords": [
+    "serverless",
+    "plugin",
+    "AWS",
+    "managed",
+    "policy",
+    "roles"
+  ],
+  "author": "Nordstrom Technology",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/Nordstrom/serverless-attach-managed-policy/issues"
+  },
+  "homepage": "https://github.com/Nordstrom/serverless-attach-managed-policy#readme",
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "eslint": "^4.11.0",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-jsx-a11y": "^6.0.2",
+    "eslint-plugin-react": "^7.5.1",
+    "mocha": "^4.0.1",
+    "np": "^2.17.0"
+  }
+}
