@@ -1,6 +1,6 @@
 {
   "name": "serverless-attach-managed-policy",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A serverless plugin to automatically attach an AWS Managed IAM Policy (or Policies) to all IAM Roles created by the Service.",
   "main": "lib/index.js",
   "directories": {
