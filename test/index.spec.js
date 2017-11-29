@@ -149,7 +149,6 @@ describe('Attach Managed Policy Serverless Plugin', () => {
       'Updating managed policies for MyRole...',
       'Attach Managed Policies plugin done.',
     ])
-
   })
 
   it('can add a policy where none exist', () => {
