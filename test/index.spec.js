@@ -73,13 +73,15 @@ const testPolicyArn1 = 'arn:aws:iam::789763425617:policy/someteam/AnotherManaged
 
 describe('Attach Managed Policy Serverless Plugin', () => {
   it('can be instantiated', () => {
-    const thePlugin = new Plugin({})
+    const slsStub = serverlessStub(null, null)
+    const thePlugin = new Plugin(slsStub)
 
     expect(thePlugin).to.be.an.instanceOf(Plugin)
   })
 
   it('hooks the Serverless "before:deploy:deploy" event', () => {
-    const thePlugin = new Plugin({})
+    const slsStub = serverlessStub(null, null)
+    const thePlugin = new Plugin(slsStub)
 
     expect(thePlugin.hooks).to.have.all.keys(['before:deploy:deploy'])
   })
@@ -117,9 +119,8 @@ describe('Attach Managed Policy Serverless Plugin', () => {
     thePlugin.attachManagedPolicy()
 
     checkLog(slsStub.cli, [
-      'Adding managed policies...',
-      'Searching for roles...',
-      'Managed policy done.',
+      'Begin Attach Managed Policies plugin...',
+      'Attach Managed Policies plugin done.',
     ])
   })
 
@@ -144,11 +145,11 @@ describe('Attach Managed Policy Serverless Plugin', () => {
     expect(resources.MyRole.Properties.ManagedPolicyArns[0]).to.equal(testPolicyArn0)
 
     checkLog(slsStub.cli, [
-      'Adding managed policies...',
-      'Searching for roles...',
-      `${testResources0.MyRole.Properties.RoleName} role already has policy ${testPolicyArn0} applied, skipping.`,
-      'Managed policy done.',
+      'Begin Attach Managed Policies plugin...',
+      'Updating managed policies for MyRole...',
+      'Attach Managed Policies plugin done.',
     ])
+
   })
 
   it('can add a policy where none exist', () => {
@@ -161,10 +162,9 @@ describe('Attach Managed Policy Serverless Plugin', () => {
     expect(resources.MyRole.Properties.ManagedPolicyArns[0]).to.equal(testPolicyArn0)
 
     checkLog(slsStub.cli, [
-      'Adding managed policies...',
-      'Searching for roles...',
-      `Setting ${testPolicyArn0} as ManagedPolicyArn for ${testResources0.MyRole.Properties.RoleName}.`,
-      'Managed policy done.',
+      'Begin Attach Managed Policies plugin...',
+      'Updating managed policies for MyRole...',
+      'Attach Managed Policies plugin done.',
     ])
   })
 
@@ -178,10 +178,9 @@ describe('Attach Managed Policy Serverless Plugin', () => {
     expect(resources.MyRole.Properties.ManagedPolicyArns[0]).to.equal(testPolicyArn0)
 
     checkLog(slsStub.cli, [
-      'Adding managed policies...',
-      'Searching for roles...',
-      `Setting ${testPolicyArn0} as ManagedPolicyArn for ${testResources0.MyRole.Properties.RoleName}.`,
-      'Managed policy done.',
+      'Begin Attach Managed Policies plugin...',
+      'Updating managed policies for MyRole...',
+      'Attach Managed Policies plugin done.',
     ])
   })
 
@@ -193,14 +192,13 @@ describe('Attach Managed Policy Serverless Plugin', () => {
     thePlugin.attachManagedPolicy()
 
     expect(resources.MyRole.Properties.ManagedPolicyArns.length).to.equal(2)
-    expect(resources.MyRole.Properties.ManagedPolicyArns[0]).to.equal(testPolicyArn0)
-    expect(resources.MyRole.Properties.ManagedPolicyArns[1]).to.equal(testPolicyArn1)
+    expect(resources.MyRole.Properties.ManagedPolicyArns[0]).to.equal(testPolicyArn1)
+    expect(resources.MyRole.Properties.ManagedPolicyArns[1]).to.equal(testPolicyArn0)
 
     checkLog(slsStub.cli, [
-      'Adding managed policies...',
-      'Searching for roles...',
-      `Adding ${testPolicyArn1} to existing ManagedPolicyArns policies for ${testResources0.MyRole.Properties.RoleName}.`,
-      'Managed policy done.',
+      'Begin Attach Managed Policies plugin...',
+      'Updating managed policies for MyRole...',
+      'Attach Managed Policies plugin done.',
     ])
   })
 
@@ -217,23 +215,19 @@ describe('Attach Managed Policy Serverless Plugin', () => {
     expect(resources.MyRole0.Properties.ManagedPolicyArns[1]).to.equal(testPolicyArn1)
 
     expect(resources.MyRole1.Properties.ManagedPolicyArns.length).to.equal(2)
-    expect(resources.MyRole1.Properties.ManagedPolicyArns[0]).to.equal(testPolicyArn1)
-    expect(resources.MyRole1.Properties.ManagedPolicyArns[1]).to.equal(testPolicyArn0)
+    expect(resources.MyRole1.Properties.ManagedPolicyArns[0]).to.equal(testPolicyArn0)
+    expect(resources.MyRole1.Properties.ManagedPolicyArns[1]).to.equal(testPolicyArn1)
 
     expect(resources.MyRole2.Properties.ManagedPolicyArns.length).to.equal(2)
     expect(resources.MyRole2.Properties.ManagedPolicyArns[0]).to.equal(testPolicyArn0)
     expect(resources.MyRole2.Properties.ManagedPolicyArns[1]).to.equal(testPolicyArn1)
 
     checkLog(slsStub.cli, [
-      'Adding managed policies...',
-      'Searching for roles...',
-      `${testResources1.MyRole0.Properties.RoleName} role already has policy ${testPolicyArn0} applied, skipping.`,
-      `Adding ${testPolicyArn1} to existing ManagedPolicyArns policies for ${testResources1.MyRole0.Properties.RoleName}.`,
-      `Adding ${testPolicyArn0} to existing ManagedPolicyArns policies for ${testResources1.MyRole1.Properties.RoleName}.`,
-      `${testResources1.MyRole1.Properties.RoleName} role already has policy ${testPolicyArn1} applied, skipping.`,
-      `Setting ${testPolicyArn0} as ManagedPolicyArn for ${testResources1.MyRole2.Properties.RoleName}.`,
-      `Adding ${testPolicyArn1} to existing ManagedPolicyArns policies for ${testResources1.MyRole2.Properties.RoleName}.`,
-      'Managed policy done.',
+      'Begin Attach Managed Policies plugin...',
+      'Updating managed policies for MyRole0...',
+      'Updating managed policies for MyRole1...',
+      'Updating managed policies for MyRole2...',
+      'Attach Managed Policies plugin done.',
     ])
   })
 })
