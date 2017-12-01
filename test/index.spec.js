@@ -1,31 +1,41 @@
+/* globals describe it beforeEach afterEach */
 const { expect } = require('chai')
+const intercept = require('intercept-stdout')
 
 const Plugin = require('../lib/index')
 
 const clone = obj => JSON.parse(JSON.stringify(obj))
 
-const testCli =
+const testConsole =
   () => {
-    const lines = []
+    let lines = []
+    let unhook = null
+
     return {
-      log: msg => lines.push(msg),
+      start: () => {
+        lines = []
+        unhook = intercept((txt) => {
+          lines.push(txt.trim())
+          return ''
+        })
+      },
+      end: () => unhook(),
       result: () => lines,
+      check: (messages) => {
+        expect(lines.length).to.equal(messages.length)
+        const max = Math.max(lines.length, lines.length)
+        for (let i = 0; i < max; i++) {
+          expect(lines[i]).to.equal(messages[i])
+        }
+      } // eslint-disable-line comma-dangle
     }
   }
 
-const checkLog =
-  (cli, messages) => {
-    const testLog = cli.result()
-    expect(testLog.length).to.equal(messages.length)
-    const max = Math.max(testLog.length, messages.length)
-    for (let i = 0; i < max; i++) {
-      expect(testLog[i]).to.equal(messages[i])
-    }
-  }
+const theTestLog = testConsole()
+const checkLog = messages => theTestLog.check(messages)
 
 const serverlessStub =
   (policyArns, resources) => ({
-    cli: testCli(),
     service: {
       provider: {
         managedPolicyArns: policyArns,
@@ -72,6 +82,9 @@ const testPolicyArn0 = 'arn:aws:iam::789763425617:policy/someteam/MyManagedPolic
 const testPolicyArn1 = 'arn:aws:iam::789763425617:policy/someteam/AnotherManagedPolicy-F6NZ1321293EJ'
 
 describe('Attach Managed Policy Serverless Plugin', () => {
+  beforeEach(() => { theTestLog.start() })
+  afterEach(() => { theTestLog.end() })
+
   it('can be instantiated', () => {
     const slsStub = serverlessStub(null, null)
     const thePlugin = new Plugin(slsStub)
@@ -89,36 +102,39 @@ describe('Attach Managed Policy Serverless Plugin', () => {
   it('doesn\'t do anything if neither managedPolicyArns nor CFT resources are included', () => {
     const slsStub = serverlessStub(null, null)
     const thePlugin = new Plugin(slsStub)
+
     thePlugin.attachManagedPolicy()
 
-    checkLog(slsStub.cli, [])
+    checkLog([])
   })
 
   it('doesn\'t do anything if no managedPolicyArns are included', () => {
     const resources = clone(testResources0)
     const slsStub = serverlessStub(null, resources)
     const thePlugin = new Plugin(slsStub)
+
     thePlugin.attachManagedPolicy()
 
     expect(resources.MyRole.Properties).not.to.have.keys(['ManagedPolicyArns'])
-
-    checkLog(slsStub.cli, [])
+    checkLog([])
   })
 
   it('doesn\'t do anything if no CFT resources are provided', () => {
     const slsStub = serverlessStub([testPolicyArn0], null)
     const thePlugin = new Plugin(slsStub)
+
     thePlugin.attachManagedPolicy()
 
-    expect(slsStub.cli.result().length).to.equal(0)
+    expect(theTestLog.result().length).to.equal(0)
   })
 
   it('looks for roles if managedPolicyArns and resources are present', () => {
     const slsStub = serverlessStub([], [])
     const thePlugin = new Plugin(slsStub)
+
     thePlugin.attachManagedPolicy()
 
-    checkLog(slsStub.cli, [
+    checkLog([
       'Begin Attach Managed Policies plugin...',
       'Attach Managed Policies plugin done.',
     ])
@@ -138,15 +154,15 @@ describe('Attach Managed Policy Serverless Plugin', () => {
     resources.MyRole.Properties.ManagedPolicyArns = [testPolicyArn0]
     const slsStub = serverlessStub([testPolicyArn0], resources)
     const thePlugin = new Plugin(slsStub)
+
     thePlugin.attachManagedPolicy()
 
     expect(resources.MyRole).to.have.keys(['Type', 'Properties'])
     expect(resources.MyRole.Properties.ManagedPolicyArns.length).to.equal(1)
     expect(resources.MyRole.Properties.ManagedPolicyArns[0]).to.equal(testPolicyArn0)
 
-    checkLog(slsStub.cli, [
+    checkLog([
       'Begin Attach Managed Policies plugin...',
-      'Updating managed policies for MyRole...',
       'Attach Managed Policies plugin done.',
     ])
   })
@@ -155,14 +171,14 @@ describe('Attach Managed Policy Serverless Plugin', () => {
     const resources = clone(testResources0)
     const slsStub = serverlessStub([testPolicyArn0], resources)
     const thePlugin = new Plugin(slsStub)
+
     thePlugin.attachManagedPolicy()
 
     expect(resources.MyRole.Properties.ManagedPolicyArns.length).to.equal(1)
     expect(resources.MyRole.Properties.ManagedPolicyArns[0]).to.equal(testPolicyArn0)
 
-    checkLog(slsStub.cli, [
+    checkLog([
       'Begin Attach Managed Policies plugin...',
-      'Updating managed policies for MyRole...',
       'Attach Managed Policies plugin done.',
     ])
   })
@@ -171,14 +187,14 @@ describe('Attach Managed Policy Serverless Plugin', () => {
     const resources = clone(testResources0)
     const slsStub = serverlessStub(testPolicyArn0, resources)
     const thePlugin = new Plugin(slsStub)
+
     thePlugin.attachManagedPolicy()
 
     expect(resources.MyRole.Properties.ManagedPolicyArns.length).to.equal(1)
     expect(resources.MyRole.Properties.ManagedPolicyArns[0]).to.equal(testPolicyArn0)
 
-    checkLog(slsStub.cli, [
+    checkLog([
       'Begin Attach Managed Policies plugin...',
-      'Updating managed policies for MyRole...',
       'Attach Managed Policies plugin done.',
     ])
   })
@@ -188,15 +204,15 @@ describe('Attach Managed Policy Serverless Plugin', () => {
     resources.MyRole.Properties.ManagedPolicyArns = [testPolicyArn0]
     const slsStub = serverlessStub([testPolicyArn1], resources)
     const thePlugin = new Plugin(slsStub)
+
     thePlugin.attachManagedPolicy()
 
     expect(resources.MyRole.Properties.ManagedPolicyArns.length).to.equal(2)
     expect(resources.MyRole.Properties.ManagedPolicyArns[0]).to.equal(testPolicyArn1)
     expect(resources.MyRole.Properties.ManagedPolicyArns[1]).to.equal(testPolicyArn0)
 
-    checkLog(slsStub.cli, [
+    checkLog([
       'Begin Attach Managed Policies plugin...',
-      'Updating managed policies for MyRole...',
       'Attach Managed Policies plugin done.',
     ])
   })
@@ -207,6 +223,7 @@ describe('Attach Managed Policy Serverless Plugin', () => {
     resources.MyRole1.Properties.ManagedPolicyArns = [testPolicyArn1]
     const slsStub = serverlessStub([testPolicyArn0, testPolicyArn1], resources)
     const thePlugin = new Plugin(slsStub)
+
     thePlugin.attachManagedPolicy()
 
     expect(resources.MyRole0.Properties.ManagedPolicyArns.length).to.equal(2)
@@ -221,11 +238,8 @@ describe('Attach Managed Policy Serverless Plugin', () => {
     expect(resources.MyRole2.Properties.ManagedPolicyArns[0]).to.equal(testPolicyArn0)
     expect(resources.MyRole2.Properties.ManagedPolicyArns[1]).to.equal(testPolicyArn1)
 
-    checkLog(slsStub.cli, [
+    checkLog([
       'Begin Attach Managed Policies plugin...',
-      'Updating managed policies for MyRole0...',
-      'Updating managed policies for MyRole1...',
-      'Updating managed policies for MyRole2...',
       'Attach Managed Policies plugin done.',
     ])
   })
